@@ -1,0 +1,41 @@
+# Configuration for Pi-hole DNS ad blocking and Portainer container management
+services:
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    env_file:
+      - .env
+    environment:
+      TZ: 'America/New_York'
+    volumes:
+      - './etc-pihole/:/etc/pihole/'
+      - './etc-dnsmasq.d/:/etc/dnsmasq.d/'
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "80:80/tcp"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "dig", "@127.0.0.1", "pi.hole"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pihole_net
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - './portainer-data:/data'
+    ports:
+      - '9000:9000'
+    restart: unless-stopped
+    networks:
+      - pihole_net
+
+networks:
+  pihole_net:
+    driver: bridge
